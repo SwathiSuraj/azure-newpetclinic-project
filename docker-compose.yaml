@@ -1,0 +1,97 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database (for Spring PetClinic)
+  postgres:
+    image: postgres:14-alpine
+    container_name: petclinic-postgres
+    environment:
+      POSTGRES_DB: petclinic
+      POSTGRES_USER: petclinic
+      POSTGRES_PASSWORD: petclinic
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petclinic"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ci-cd-network
+
+  # SonarQube
+  sonarqube:
+    image: sonarqube:10-community
+    container_name: sonarqube
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://postgres:5432/sonarqube
+      SONAR_JDBC_USERNAME: petclinic
+      SONAR_JDBC_PASSWORD: petclinic
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLED: "true"
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/system/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - ci-cd-network
+
+  # Jenkins
+  jenkins:
+    image: jenkins/jenkins:2.401.3-lts-jdk11
+    container_name: jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    environment:
+      JAVA_OPTS: "-Xmx2g -Xms512m"
+      JENKINS_JAVA_OPTS: "-Xmx2g -Xms512m"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - jenkins_data:/var/jenkins_data
+    depends_on:
+      sonarqube:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - ci-cd-network
+
+  # Docker Registry (optional, for local testing)
+  registry:
+    image: registry:2
+    container_name: docker-registry
+    ports:
+      - "5000:5000"
+    volumes:
+      - registry_data:/var/lib/registry
+    environment:
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+    networks:
+      - ci-cd-network
+
+volumes:
+  postgres_data:
+  sonarqube_data:
+  sonarqube_logs:
+  jenkins_home:
+  jenkins_data:
+  registry_data:
+
+networks:
+  ci-cd-network:
+    driver: bridge

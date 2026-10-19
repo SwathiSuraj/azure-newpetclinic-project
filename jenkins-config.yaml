@@ -1,0 +1,133 @@
+# Jenkins Configuration as Code (JCasC) for CI/CD Pipeline
+
+unclassified:
+  location:
+    url: "http://jenkins:8080"
+  
+  awsConfig:
+    useInstanceProfile: true
+    credentialsId: "aws-credentials"
+    region: "us-west-2"
+
+  # SonarQube Configuration
+  sonarGlobalConfiguration:
+    installations:
+      - name: "SonarQube"
+        serverUrl: "http://sonarqube:9000"
+        credentialsId: "sonar-token"
+        moeMode: false
+        additionalProperties: ""
+
+  # Git Configuration
+  gitScm:
+    globalConfigName: "Jenkins"
+    globalConfigEmail: "jenkins@company.com"
+    createAccountBasedOnEmail: true
+
+  # Slack Notification
+  slackNotifier:
+    baseUrl: "https://hooks.slack.com/services/"
+    botUser: false
+    sendAsBot: false
+    credentialsId: "slack-token"
+    teamDomain: "your-workspace"
+    authTokenCredentialId: "slack-token"
+
+# Jenkins System Configuration
+jenkins:
+  agentProtocols:
+    - "JNLP4-connect"
+    - "Ping"
+  
+  authorizationStrategy:
+    projectMatrix:
+      permissions:
+        - "hudson.model.Item.Build:authenticated"
+        - "hudson.model.Item.Cancel:authenticated"
+        - "hudson.model.Item.Read:authenticated"
+        - "hudson.model.View.Create:authenticated"
+        - "hudson.model.View.Delete:authenticated"
+        - "hudson.model.View.Read:authenticated"
+  
+  securityRealm:
+    local:
+      allowsSignup: false
+      enableCaptcha: false
+  
+  remotingSecurity:
+    enabled: true
+
+# Credentials Configuration
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - $class: "UsernamePasswordCredentialsImpl"
+            id: "github-credentials"
+            username: "jenkins-bot"
+            password: "${GITHUB_TOKEN}"
+            description: "GitHub Bot Token"
+          
+          - $class: "UsernamePasswordCredentialsImpl"
+            id: "sonar-token"
+            username: "admin"
+            password: "${SONAR_TOKEN}"
+            description: "SonarQube Token"
+          
+          - $class: "AzureCredentialsImpl"
+            id: "azure-credentials"
+            subscriptionId: "${AZURE_SUBSCRIPTION_ID}"
+            clientId: "${AZURE_CLIENT_ID}"
+            clientSecret: "${AZURE_CLIENT_SECRET}"
+            tenantId: "${AZURE_TENANT_ID}"
+            description: "Azure Service Principal"
+          
+          - $class: "UsernamePasswordCredentialsImpl"
+            id: "acr-credentials"
+            username: "${ACR_USERNAME}"
+            password: "${ACR_PASSWORD}"
+            description: "Azure Container Registry"
+
+# Tool Installations
+tool:
+  git:
+    installations:
+      - name: "git"
+        home: "/usr/bin/git"
+  
+  maven:
+    installations:
+      - name: "Maven 3.8.6"
+        properties:
+          - installSource:
+              installers:
+                - maven:
+                    id: "3.8.6"
+  
+  jdk:
+    installations:
+      - name: "Java 11"
+        properties:
+          - installSource:
+              installers:
+                - adoptOpenJdkInstaller:
+                    id: "jdk-11.0.1+13"
+
+# Plugins Configuration
+plugins:
+  plugins:
+    - "github:1.37.3"
+    - "pipeline-model-definition:2.2144.v077a_574beee3"
+    - "pipeline-stage-view:2.26"
+    - "sonar:2.15"
+    - "docker:1.2.3"
+    - "docker-pipeline:1.29"
+    - "kubernetes:latest"
+    - "azure-credentials:latest"
+    - "azure-cli:latest"
+    - "slack:latest"
+    - "email-ext:2.99"
+    - "jacoco:3.3"
+    - "maven-plugin:3.17"
+    - "timestamper:1.26"
+    - "log-parser:2.4"

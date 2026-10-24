@@ -36,7 +36,7 @@ pipeline {
                     try {
                         checkout([
                             $class: 'GitSCM',
-                            branches: [[name: "${params.GIT_BRANCH}"]],
+                            branches: [[name: '*/master']],
                             userRemoteConfigs: [[url: "${params.GIT_REPO}"]]
                         ])
                         echo "✓ Source code checked out successfully"

@@ -30,7 +30,7 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8080/manage/health/liveness || exit 1
+    CMD curl -f http://localhost:8080/actuator/health/liveness || exit 1
 
 # JVM options
 ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+ParallelRefProcEnabled -Xms256m -Xmx512m"

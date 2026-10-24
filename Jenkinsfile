@@ -35,7 +35,7 @@ pipeline {
         )
         string(
             name: 'AKS_RESOURCE_GROUP',
-            defaultValue: 'test_RG_jenkins_project',
+            defaultValue: 'rg-petclinic-cicd',
             description: 'AKS Resource Group'
         )
         string(
@@ -449,7 +449,7 @@ EOF
                             ATTEMPT=1
                             while [ "$ATTEMPT" -le 5 ]; do
                                 if curl --fail --silent \
-                                    "http://${SERVICE_IP}/manage/health"; then
+                                    "http://${SERVICE_IP}/actuator/health"; then
                                     echo "Smoke test passed."
                                     exit 0
                                 fi

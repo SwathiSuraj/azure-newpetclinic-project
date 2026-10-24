@@ -3,7 +3,7 @@ pipeline {
     
     parameters {
         string(name: 'GIT_REPO', defaultValue: 'https://github.com/SwathiSuraj/azure-newpetclinic-project.git', description: 'GitHub Repository URL')
-        string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'GitHub Branch')
+        string(name: 'GIT_BRANCH', defaultValue: 'master', description: 'GitHub Branch')
         string(name: 'REGISTRY_URL', defaultValue: 'petclinicacr.azurecr.io', description: 'Azure Container Registry URL')
         string(name: 'REGISTRY_USERNAME', defaultValue: '', description: 'ACR Username')
         password(name: 'REGISTRY_PASSWORD', defaultValue: '', description: 'ACR Password')
@@ -12,14 +12,15 @@ pipeline {
         string(name: 'AKS_CLUSTER_NAME', defaultValue: 'petclinic-aks', description: 'AKS Cluster Name')
     }
     
+    
     environment {
-        APP_NAME = 'spring-petclinic'
-        BUILD_NUMBER = "${BUILD_NUMBER}"
-        DOCKER_IMAGE_TAG = "${BUILD_NUMBER}"
-        JAVA_HOME = '/usr/lib/jvm/java-17-openjdk'
-        MAVEN_HOME = '/usr/share/maven'
-        PATH = "${MAVEN_HOME}/bin:${JAVA_HOME}/bin:${PATH}"
+    APP_NAME = 'spring-petclinic'
+    DOCKER_IMAGE_TAG = "${BUILD_NUMBER}"
+    JAVA_HOME = '/usr/lib/jvm/java-21-openjdk-amd64'
+    MAVEN_HOME = '/usr/share/maven'
+    PATH = "${JAVA_HOME}/bin:${MAVEN_HOME}/bin:${env.PATH}"
     }
+
     
     options {
         buildDiscarder(logRotator(numToKeepStr: '20'))

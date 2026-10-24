@@ -241,47 +241,50 @@ EOF
             }
         }
 
+        
         stage('Push to ACR') {
             steps {
                 echo '========== Push Image to Azure Container Registry =========='
 
-                script {
-                    if (!params.REGISTRY_USERNAME?.trim() ||
-                        !params.REGISTRY_PASSWORD?.trim()) {
-                        error(
-                            'ACR credentials are missing. Configure the ' +
-                            'registry username and password before this stage.'
-                        )
-                    }
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'acr-credentials',
+                        usernameVariable: 'ACR_USERNAME',
+                        passwordVariable: 'ACR_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        set -eu
+
+                        echo "Logging in to Azure Container Registry..."
+
+                        printf '%s' "$ACR_PASSWORD" |
+                            docker login "$REGISTRY_URL" \
+                                --username "$ACR_USERNAME" \
+                                --password-stdin
+
+                        docker tag \
+                            "${APP_NAME}:${DOCKER_IMAGE_TAG}" \
+                            "${REGISTRY_URL}/${APP_NAME}:${DOCKER_IMAGE_TAG}"
+
+                        docker tag \
+                            "${APP_NAME}:${DOCKER_IMAGE_TAG}" \
+                            "${REGISTRY_URL}/${APP_NAME}:latest"
+
+                        docker push \
+                            "${REGISTRY_URL}/${APP_NAME}:${DOCKER_IMAGE_TAG}"
+
+                        docker push \
+                            "${REGISTRY_URL}/${APP_NAME}:latest"
+
+                        docker logout "$REGISTRY_URL"
+
+                        echo "Image pushed to ACR successfully."
+                    '''
                 }
-
-                sh '''
-                    set -eu
-
-                    echo "Logging in to Azure Container Registry..."
-
-                    printf '%s' "$REGISTRY_PASSWORD" |
-                        docker login "$REGISTRY_URL" \
-                            --username "$REGISTRY_USERNAME" \
-                            --password-stdin
-
-                    docker tag \
-                        "${APP_NAME}:${DOCKER_IMAGE_TAG}" \
-                        "${REGISTRY_URL}/${APP_NAME}:${DOCKER_IMAGE_TAG}"
-
-                    docker tag \
-                        "${APP_NAME}:${DOCKER_IMAGE_TAG}" \
-                        "${REGISTRY_URL}/${APP_NAME}:latest"
-
-                    docker push "${REGISTRY_URL}/${APP_NAME}:${DOCKER_IMAGE_TAG}"
-                    docker push "${REGISTRY_URL}/${APP_NAME}:latest"
-
-                    docker logout "$REGISTRY_URL"
-
-                    echo "Image pushed to ACR successfully."
-                '''
             }
         }
+
 
         stage('Trivy Vulnerability Scan') {
             steps {

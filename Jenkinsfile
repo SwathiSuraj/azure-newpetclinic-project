@@ -296,23 +296,34 @@ EOF
                             set -e
 
                             if ! command -v trivy >/dev/null 2>&1; then
-                                echo "Trivy is not installed on the VM."
-                                echo "Install Trivy separately before scanning."
+                                echo "ERROR: Trivy is not installed or not in PATH."
                                 exit 2
                             fi
 
                             IMAGE="${REGISTRY_URL}/${APP_NAME}:${DOCKER_IMAGE_TAG}"
 
+                            echo "Scanning image: $IMAGE"
+                            trivy --version
+
                             trivy image \
+                                --config /dev/null \
+                                --ignorefile /dev/null \
+                                --scanners vuln \
                                 --severity HIGH,CRITICAL \
                                 --format json \
                                 --output trivy-report.json \
                                 "$IMAGE"
 
                             trivy image \
+                                --config /dev/null \
+                                --ignorefile /dev/null \
+                                --scanners vuln \
                                 --severity HIGH,CRITICAL \
                                 "$IMAGE"
                         '''
+
+                        archiveArtifacts artifacts: 'trivy-report.json',
+                                         allowEmptyArchive: false
                     } catch (Exception e) {
                         echo "WARNING: Trivy scan needs attention: ${e.message}"
                         unstable('Trivy scan failed or is not installed')
@@ -320,6 +331,7 @@ EOF
                 }
             }
         }
+
 
         stage('Deploy to AKS') {
             steps {
